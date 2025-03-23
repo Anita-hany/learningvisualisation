@@ -61,6 +61,7 @@ ggplot(brexit, aes(y = opinion, fill = opinion)) +
   facet_wrap(~region,
     nrow = 1, labeller = label_wrap_gen(width = 12),
     # ___
+    scales = "free_x"
   ) +
   guides(fill = FALSE) +
   labs(
@@ -82,7 +83,59 @@ ggplot(brexit, aes(y = opinion, fill = opinion)) +
 First, calculate the proportion of wrong, right, and don't know answers in each category and then plot these proportions (rather than the counts) and then improve axis labeling. How is the story this visualisation telling different than the story the original plot tells? **Hint:** You'll need the **scales** package to improve axis labeling, which means you'll need to load it on top of the document as well.
 
 ```{r}
-# code goes here
+# Load necessary packages
+library(ggplot2)
+library(dplyr)
+library(forcats)
+library(scales)
+
+# Ensure region is a factor
+brexit <- brexit %>%
+  mutate(region = as.factor(region)) %>%
+  mutate(
+    region = fct_relevel(region, "london", "rest_of_south", "midlands_wales", "north", "scot"),
+    region = fct_recode(region, 
+                        London = "london", 
+                        `Rest of South` = "rest_of_south",  
+                        `Midlands & Wales` = "midlands_wales", 
+                        North = "north", 
+                        Scotland = "scot")
+  )
+
+# Check if 'opinion' column exists
+if (!"opinion" %in% colnames(brexit)) {
+  stop("Error: The 'opinion' column is missing from the dataset.")
+}
+
+# Calculate proportions
+brexit_prop <- brexit %>%
+  group_by(region, opinion) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(region) %>%
+  mutate(proportion = count / sum(count))
+
+# Create the plot
+ggplot(brexit_prop, aes(x = opinion, y = proportion, fill = opinion)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~region) +  
+  scale_y_continuous(labels = percent_format()) +  
+  labs(
+    title = "Was Britain right/wrong to vote to leave EU?",
+    subtitle = "YouGov Survey Results, 2-3 September 2019",
+    caption = "Source: bit.ly/2lCJZVg",
+    x = "Opinion", y = "Proportion",
+    fill = "Opinion"
+  ) +
+  scale_fill_manual(values = c(
+    "Wrong" = "#ef8a62",
+    "Right" = "#67a9cf",
+    "Don't know" = "gray"
+  )) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
+  )
 ```
 
 ### Exercise 3 - Comparing proportions across bars
@@ -90,5 +143,57 @@ First, calculate the proportion of wrong, right, and don't know answers in each 
 Recreate the same visualisation from the previous exercise, this time dodging the bars for opinion proportions for each region, rather than faceting by region and then improve the legend. How is the story this visualisation telling different than the story the previous plot tells?
 
 ```{r}
-# code goes here
+# Load necessary packages
+library(ggplot2)
+library(dplyr)
+library(forcats)
+library(scales)
+
+# Pastikan region adalah faktor sebelum menggunakan fct_relevel dan fct_recode
+brexit <- brexit %>%
+  mutate(region = as.factor(region)) %>%  
+  mutate(
+    region = fct_relevel(region, "london", "rest_of_south", "midlands_wales", "north", "scot"),
+    region = fct_recode(region, 
+                        London = "london", 
+                        `Rest of South` = "rest_of_south",  
+                        `Midlands & Wales` = "midlands_wales", 
+                        North = "north", 
+                        Scotland = "scot")
+  )
+
+# Pastikan kolom 'opinion' ada dalam dataset
+if (!"opinion" %in% colnames(brexit)) {
+  stop("Error: Kolom 'opinion' tidak ditemukan dalam dataset.")
+}
+
+# Menghitung proporsi
+brexit_prop <- brexit %>%
+  group_by(region, opinion) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(region) %>%
+  mutate(proportion = count / sum(count))
+
+# Membuat plot dengan dodge untuk membandingkan antar-wilayah
+ggplot(brexit_prop, aes(x = region, y = proportion, fill = opinion)) +
+  geom_bar(stat = "identity", position = "dodge") +  
+  scale_y_continuous(labels = percent_format()) +  
+  labs(
+    title = "Was Britain right/wrong to vote to leave EU?",
+    subtitle = "YouGov Survey Results, 2-3 September 2019",
+    caption = "Source: bit.ly/2lCJZVg",
+    x = "Region", y = "Proportion",
+    fill = "Opinion"
+  ) +
+  scale_fill_manual(values = c(
+    "Wrong" = "#ef8a62",
+    "Right" = "#67a9cf",
+    "Don't know" = "gray"
+  )) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
+  )
+
 ```
